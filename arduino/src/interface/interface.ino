@@ -3,11 +3,11 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
     // wait for serial message that exactly equals "ready"
+    delay(2000);
     digitalWrite(LED_BUILTIN, HIGH);
-    Serial.println("waiting");
     while (Serial.available() < 5) {
-        delay(100);
-        Serial.println(Serial.available());
+        delay(500);
+        Serial.println("waiting");
 
     }
     digitalWrite(LED_BUILTIN, LOW);

@@ -1,16 +1,6 @@
-GIT {
-    https://github.com/wjwwood/serial build/deps/serial main
-}
-
-CMAKE(serial) {
-    build/deps/serial
-}
 
 UNIT(EXEC) software {
     SOURCES {
         src/*.cpp
-    }
-    DEPS {
-        serial_serial
     }
 }
