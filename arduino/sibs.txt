@@ -1,0 +1,18 @@
+
+UNIT(OBJ) interface {
+    SOURCES {
+        src/interface/interface.ino
+    }
+    COMPILE {
+        arduino-cli compile $SRC --fqbn arduino:avr:leonardo --output-dir build/obj/interface
+    }
+}
+
+UNIT(OBJ) module {
+    SOURCES {
+        src/module/module.ino
+    }
+    COMPILE {
+        arduino-cli compile $SRC --fqbn arduino:avr:leonardo --output-dir build/obj/module
+    }
+}
