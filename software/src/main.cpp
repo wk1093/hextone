@@ -122,7 +122,17 @@ int main() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     serialPort.WriteData("ready", 5);
-    std::cout << "Ready" << std::endl;
+    std::cout << "ready" << std::endl;
+    
+    while (true) {
+        readSize = serialPort.ReadData(buffer, 1024);
+        if (readSize > 0) {
+            std::string str(buffer, readSize);
+            std::cout << str << std::endl;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    }
 
     return 0;
 
