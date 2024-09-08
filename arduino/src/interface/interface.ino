@@ -11,9 +11,9 @@ void setup() {
 
     }
     digitalWrite(LED_BUILTIN, LOW);
-    char buf[6];
-    Serial.readBytes(buf, 5);
-    buf[5] = '\0';
+    char buf[256];
+    int read = Serial.readBytes(buf, 255);
+    buf[read] = '\0';
     if (strncmp(buf, "ready", 5) != 0) {
         Serial.println("bad ready");
         Serial.print("Got: ");

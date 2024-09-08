@@ -1,4 +1,6 @@
-# Modular Hexagonal Midi Controller
+# Hextone
+
+A modular hexagonal midi controller.
 
 ## Folder Structure
 - software/ - Software that runs on the computer plugged into the controller

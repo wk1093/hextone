@@ -132,7 +132,9 @@ int main() {
         readSize = serialPort.ReadData(buffer, 1024);
         if (readSize > 0) {
             std::string str(buffer, readSize);
-            std::cout << str << std::endl;
+            if (str.find("msg") != std::string::npos) {
+                std::cout << str << std::endl;
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
