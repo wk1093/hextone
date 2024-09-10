@@ -125,3 +125,27 @@ void AudioPlayer::seek(float progress) {
         return;
     }
 }
+
+void AudioPlayer::mixNow(AudioBuffer buffer) {
+    // mix the buffer into the current buffer at the current position so it starts playing, if it is at the end of the buffer when this is called, it will delete the entire buffer and replce it with this
+    if (data.position >= data.buffer.size()) {
+        data.buffer = buffer;
+        data.position = 0;
+        return;
+    }
+    if (data.position + buffer.size() > data.buffer.size()) {
+        data.buffer.resize(data.position + buffer.size());
+    }
+    for (size_t i = 0; i < buffer.size(); i++) {
+        data.buffer[data.position + i] += buffer[i];
+        if (data.buffer[data.position + i] > 1.0f) {
+            data.buffer[data.position + i] = 1.0f;
+            continue;
+        }
+        if (data.buffer[data.position + i] < -1.0f) {
+            data.buffer[data.position + i] = -1.0f;
+            continue;
+        }
+    }
+}
+

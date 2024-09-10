@@ -139,7 +139,7 @@ void queueThreadFunction() {
 
 int main() {
     initAudio();
-    AudioPlayer* audioPlayer = new AudioPlayer();
+
     Synth* synth = new SineSynth();
     // TODO: search for port automatically
     SerialPort serialPort("COM6");
@@ -191,7 +191,17 @@ int main() {
         }
     }
     std::cout << "Connected to device" << std::endl;
-    audioPlayer->data.buffer = synth->generateSeconds(1.0f);
+    AudioStream stream;
+    // play a basic startup sound (3 notes over the span of 3/4 seconds)
+    // true minor chord (using microtonal scale)
+    synth->frequency = 440;
+    stream.write(synth->generateSeconds(0.25f), AudioOffset::fromSeconds(0.0f));
+    synth->frequency = 440*1.333;
+    stream.write(synth->generateSeconds(0.25f), AudioOffset::fromSeconds(0.25f));
+    synth->frequency = 440*1.333*1.333;
+    stream.write(synth->generateSeconds(0.25f), AudioOffset::fromSeconds(0.5f));
+
+    AudioPlayer* audioPlayer = new AudioPlayer(stream.buffer);
     audioPlayer->play();
 
     
@@ -202,6 +212,7 @@ int main() {
 
     bool button1state = false;
 
+
     while (running) {
         if (globalState.exit) {
             running = false;
@@ -211,6 +222,7 @@ int main() {
             QueueItem item = globalState.queue.pop();
             if (item.type == QueueItem::Type::NoteOn) {
                 button1state = true;
+                
             } else if (item.type == QueueItem::Type::NoteOff) {
                 button1state = false;
             }
