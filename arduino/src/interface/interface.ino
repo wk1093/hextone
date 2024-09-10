@@ -1,3 +1,4 @@
+#include <string.h>
 
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
@@ -30,10 +31,26 @@ void setup() {
     Serial.println("ready");
 }
 
+void reset() {
+    void (*resetFunc)(void) = 0;
+    resetFunc();
+}
+
 void loop() {
     digitalWrite(LED_BUILTIN, HIGH);
     Serial.print("msg(o101010)");
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
     delay(500);
+    if (Serial.available() > 0) {
+        char buf[256];
+        int read = Serial.readBytes(buf, 255);
+        buf[read] = '\0';
+        if (strncmp(buf, "shutdown", 8) == 0) {
+            reset(); // TODO: this causes issues, and we cant reconnect without physically pressing the reset button even though this should reset it properly
+        }
+    }
+
+            
+
 }

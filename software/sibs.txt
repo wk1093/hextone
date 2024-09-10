@@ -1,10 +1,39 @@
 
 GIT {
     https://github.com/PortAudio/portaudio $BUILDDIR/deps/portaudio v19.7.0
+    https://github.com/glfw/glfw.git $BUILDDIR/deps/glfw 3.3.2
+    https://github.com/Dav1dde/glad.git $BUILDDIR/deps/glad v0.1.36
+    https://github.com/ocornut/imgui.git $BUILDDIR/deps/imgui v1.91.1
 }
 
 CMAKE(pa) {
     $BUILDDIR/deps/portaudio
+}
+
+CMAKE(gl) {
+    $BUILDDIR/deps/glfw
+    $BUILDDIR/deps/glad
+}
+
+UNIT(STATIC) gl_imgui {
+    SOURCES {
+        $BUILDDIR/deps/imgui/*.cpp
+        $BUILDDIR/deps/imgui/*.h
+        $BUILDDIR/deps/imgui/backends/imgui_impl_glfw.cpp
+        $BUILDDIR/deps/imgui/backends/imgui_impl_opengl3.cpp
+        $BUILDDIR/deps/imgui/misc/cpp/imgui_stdlib.cpp
+        $BUILDDIR/deps/imgui/misc/cpp/imgui_stdlib.h
+        $BUILDDIR/deps/imgui/backends/imgui_impl_opengl3.h
+        $BUILDDIR/deps/imgui/backends/imgui_impl_glfw.h
+    }
+    INCLUDE {
+        $BUILDDIR/deps/imgui
+        $BUILDDIR/deps/imgui/backends
+        $BUILDDIR/deps/imgui/misc/cpp
+    }
+    DEPS {
+        gl_glfw
+    }
 }
 
 UNIT(EXEC) software {
@@ -14,5 +43,11 @@ UNIT(EXEC) software {
     }
     DEPS {
         pa_portaudio
+        gl_glfw
+        gl_glad
+        gl_imgui
+    }
+    LINK {
+        $CXXL $SRC -o $OUT -lgdi32
     }
 }

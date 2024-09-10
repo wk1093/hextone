@@ -1,2 +1,3 @@
 @echo off
-software\build\software.exe
+cd software
+python -m sibs . && build\software.exe

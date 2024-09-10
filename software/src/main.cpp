@@ -6,11 +6,15 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "serial.h"
 #include "synth.h"
 
-// TODO: split audio.h into source and header
 
 #define TIMEOUT 2000
 
@@ -67,6 +71,9 @@ void queueThreadFunction() {
     char buffer[1024]; // commands should only be a few bytes long, but this is just in case
     std::chrono::time_point<std::chrono::system_clock> lastMessageTime = std::chrono::system_clock::now();
     while (true) {
+        if (globalState.exit) {
+            break;
+        }
         int readSize = globalState.serialPort->ReadData(buffer, 1024);
         if (readSize > 0) {
             std::string str(buffer, readSize);
@@ -97,6 +104,7 @@ void queueThreadFunction() {
         if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastMessageTime).count() > TIMEOUT) {
             // the device was probably powered off, close the connection
             std::cout << "Device disconnected, closing connection" << std::endl;
+            globalState.exit = true;
             return;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -106,18 +114,34 @@ void queueThreadFunction() {
 
 int main() {
     initAudio();
-    AudioPlayer audioPlayer;
+    AudioPlayer* audioPlayer = new AudioPlayer();
     Synth* synth = new SineSynth();
     // TODO: search for port automatically
     SerialPort serialPort("COM6");
-
     if (!serialPort.connected) {
         std::cout << "Could not connect to device, exiting" << std::endl;
         return 0;
     }
+
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Hexagonal", nullptr, nullptr);
+    if (window == nullptr) {
+        std::cerr << "Error: Failed to create window" << std::endl;
+        return 0;
+    }
+    glfwMakeContextCurrent(window);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+
     char buffer[1024];
     int readSize;
     while (true) {
+        glfwPollEvents();
         readSize = serialPort.ReadData(buffer, 1024);
         if (readSize >= 7) {
             if (strncmp(buffer, "waiting", 7) == 0) {
@@ -133,6 +157,7 @@ int main() {
     serialPort.WriteData("ready", 5);
     // after we write ready, it should respond with "ready"
     while (true) {
+        glfwPollEvents();
         readSize = serialPort.ReadData(buffer, 1024);
         if (readSize >= 5) {
             if (strncmp(buffer, "ready", 5) == 0) {
@@ -141,31 +166,63 @@ int main() {
         }
     }
     std::cout << "Connected to device" << std::endl;
-    audioPlayer.data.buffer = synth->generateSeconds(1.0f);
-    audioPlayer.play();
+    audioPlayer->data.buffer = synth->generateSeconds(1.0f);
+    audioPlayer->play();
 
     
     globalState.serialPort = &serialPort;
     globalState.queueThread = std::thread(queueThreadFunction);
 
-    while (true) {
+    bool running = true;
+
+    while (running) {
         if (globalState.exit) {
-            break;
+            running = false;
         }
-        if (globalState.queue.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
+
+        if (!globalState.queue.empty()) {
+            QueueItem item = globalState.queue.pop();
         }
-        QueueItem item = globalState.queue.pop();
-        std::cout << "Received item of type " << (int)item.type << std::endl;
-        std::cout << "Data: " << std::endl;
-        for (uint8_t byte : item.data) {
-            std::cout << (char)byte;
+
+        // prerender
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
+
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Exit")) {
+                    globalState.exit = true;
+                    running = false;
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
         }
-        std::cout << std::endl;
-        
+
+
+        // render
+        ImGui::Render();
+
+
+        // postrender
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
+    globalState.queueThread.join();
+    
+    serialPort.WriteData("shutdown", 8);
+
+    delete synth;
+    delete audioPlayer;
+    glfwTerminate();
     terminateAudio();
     return 0;
 }
