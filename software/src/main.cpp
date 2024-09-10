@@ -25,7 +25,8 @@ struct QueueItem {
     enum class Type {
         NoteOn,
         NoteOff,
-        Shutdown
+        Shutdown,
+        Ping
     };
     Type type;
     // uint8_t x;
@@ -83,18 +84,43 @@ void queueThreadFunction() {
                 // f: note off
                 // s: shutdown
                 // other: error
-                if (str[str.find("msg")+4] == 'o') {
-                    item.type = QueueItem::Type::NoteOn;
-                    item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                } else if (str[str.find("msg")+4] == 'f') {
-                    item.type = QueueItem::Type::NoteOff;
-                    item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                } else if (str[str.find("msg")+4] == 's') {
-                    item.type = QueueItem::Type::Shutdown;
-                    item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                } else {
-                    std::cerr << "Error: Unknown message type " << str[str.find("msg")+4] << std::endl;
+                // if (str[str.find("msg")+4] == 'o') {
+                //     std::cout << "Received note on" << std::endl;
+                //     item.type = QueueItem::Type::NoteOn;
+                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
+                // } else if (str[str.find("msg")+4] == 'f') {
+                //     std::cout << "Received note off" << std::endl;
+                //     item.type = QueueItem::Type::NoteOff;
+                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
+                // } else if (str[str.find("msg")+4] == 's') {
+                //     item.type = QueueItem::Type::Shutdown;
+                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
+                // } else if (str[str.find("msg")+4] == 'p') {
+                //     item.type = QueueItem::Type::Ping;
+                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
+                // }
+                //  else {
+                //     std::cerr << "Error: Unknown message type " << str[str.find("msg")+4] << std::endl;
+                // }
+                // this needs to be a bit more complicated, because mutliple messages can be sent in one go
+                // like this: msg(o1)msg(f1)msg(o2)msg(f2)
+                while (str.find("msg(") != std::string::npos) {
+                    if (str[str.find("msg")+4] == 'o') {
+                        item.type = QueueItem::Type::NoteOn;
+                    } else if (str[str.find("msg")+4] == 'f') {
+                        item.type = QueueItem::Type::NoteOff;
+                    } else if (str[str.find("msg")+4] == 'p') {
+                        item.type = QueueItem::Type::Ping;
+                    } else if (str[str.find("msg")+4] == 's') {
+                        item.type = QueueItem::Type::Shutdown;
+                    } else {
+                        std::cerr << "Error: Unknown message type " << str[str.find("msg")+4] << " in " << str << std::endl;
+                    }
+                    item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.begin()+str.find(')'));
+                    str = str.substr(str.find(')')+1);
                 }
+
+
                 globalState.queue.push(item);
             } else {
                 std::cout << "WARNING: Mangled message" << std::endl;
@@ -107,7 +133,6 @@ void queueThreadFunction() {
             globalState.exit = true;
             return;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     globalState.exit = true;
 }
@@ -175,6 +200,8 @@ int main() {
 
     bool running = true;
 
+    bool button1state = false;
+
     while (running) {
         if (globalState.exit) {
             running = false;
@@ -182,6 +209,12 @@ int main() {
 
         if (!globalState.queue.empty()) {
             QueueItem item = globalState.queue.pop();
+            if (item.type == QueueItem::Type::NoteOn) {
+                button1state = true;
+            } else if (item.type == QueueItem::Type::NoteOff) {
+                button1state = false;
+            }
+
         }
 
         // prerender
@@ -204,6 +237,11 @@ int main() {
             ImGui::EndMainMenuBar();
         }
 
+        // button display
+        // little box that change color when button is pressed
+        ImGui::Checkbox("1", &button1state);
+
+
 
         // render
         ImGui::Render();
@@ -214,7 +252,14 @@ int main() {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (glfwWindowShouldClose(window)) {
+            running = false;
+            globalState.exit = true;
+        }
     }
+
+    globalState.exit = true;
 
     globalState.queueThread.join();
     

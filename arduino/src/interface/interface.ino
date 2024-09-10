@@ -1,7 +1,11 @@
 #include <string.h>
 
+#define SWITCH_1 12
+bool sw1_state = false;
+
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(SWITCH_1, INPUT_PULLUP);
     Serial.begin(115200);
     // wait for serial message that exactly equals "ready"
     delay(2000);
@@ -31,25 +35,33 @@ void setup() {
     Serial.println("ready");
 }
 
-void reset() {
-    void (*resetFunc)(void) = 0;
-    resetFunc();
-}
+long long lastPing = 0;
 
 void loop() {
-    digitalWrite(LED_BUILTIN, HIGH);
-    Serial.print("msg(o101010)");
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
-    if (Serial.available() > 0) {
-        char buf[256];
-        int read = Serial.readBytes(buf, 255);
-        buf[read] = '\0';
-        if (strncmp(buf, "shutdown", 8) == 0) {
-            reset(); // TODO: this causes issues, and we cant reconnect without physically pressing the reset button even though this should reset it properly
+    bool sws;
+    if ((sws = !digitalRead(SWITCH_1)) != sw1_state) {
+        sw1_state = sws;
+        if (sws) {
+            Serial.print("msg(o1)");
+        } else {
+            Serial.print("msg(f1)");
         }
     }
+
+    if (millis() - lastPing > 1000) {
+        Serial.print("msg(ping)");
+        lastPing = millis();
+    }
+
+
+    // if (Serial.available() > 0) {
+    //     char buf[256];
+    //     int read = Serial.readBytes(buf, 255);
+    //     buf[read] = '\0';
+    //     if (strncmp(buf, "shutdown", 8) == 0) {
+    //         // TODO: reset without fucking up the serial communitcation
+    //     }
+    // }
 
             
 
