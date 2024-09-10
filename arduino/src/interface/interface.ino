@@ -32,7 +32,7 @@ void setup() {
 
 void loop() {
     digitalWrite(LED_BUILTIN, HIGH);
-    Serial.println("msg(ping)");
+    Serial.print("msg(o101010)");
     delay(500);
     digitalWrite(LED_BUILTIN, LOW);
     delay(500);
