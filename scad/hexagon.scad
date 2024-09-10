@@ -15,17 +15,17 @@ cross_depth=4;
 cross_length = 4.4;
 horizontal_cross_width = 1.4;
 vertical_cross_width = 1.3;
-extra_outer_cross_width = 2.10;
-extra_outer_cross_height = 1.0;
+extra_outer_cross_width = 1.8;
+extra_outer_cross_height = -1.0;
 extra_vertical_cross_length = 1.1;
 holediff = -0.75;
-sq_width = 2;
-hex_width = 2;
+sq_width = 3;
+hex_width = 7;
 sq_off = -10;
-key_off = 10;
+key_off = 15;
 
 // 0 = all, 1 = hexgrid, 2 = squaregrid, 3 = keygrid, 4 = single key
-display = 0;
+display = 3;
 
 fac = 1.75;
 border = spacing / 1.5;

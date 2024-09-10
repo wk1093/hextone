@@ -4,10 +4,16 @@
 #include <thread>
 #include <chrono>
 #include "serial.h"
+#include "synth.h"
+
+// TODO: split audio.h into source and header
 
 #define TIMEOUT 2000
 
 int main() {
+    initAudio();
+    AudioPlayer audioPlayer;
+    Synth* synth = new SineSynth();
     // TODO: search for port automatically
     SerialPort serialPort("COM6");
     if (!serialPort.connected) {
@@ -40,6 +46,8 @@ int main() {
         }
     }
     std::cout << "Connected to device" << std::endl;
+    audioPlayer.data.buffer = synth->generateSeconds(1.0f);
+    audioPlayer.play();
 
     
     // keep track of time of last message, if it's been too long, kill the connection
@@ -64,5 +72,6 @@ int main() {
         }
     }
 
+    terminateAudio();
     return 0;
 }

@@ -1,6 +1,18 @@
 
+GIT {
+    https://github.com/PortAudio/portaudio $BUILDDIR/deps/portaudio v19.7.0
+}
+
+CMAKE(pa) {
+    $BUILDDIR/deps/portaudio
+}
+
 UNIT(EXEC) software {
     SOURCES {
         src/*.cpp
+        src/*.h
+    }
+    DEPS {
+        pa_portaudio
     }
 }
