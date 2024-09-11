@@ -49,10 +49,7 @@ void loop() {
         lastsw1 = millis();
     } else {
         sw1db = sw1_state;
-    }
-        
-        
-            
+    }    
 
 
     bool sws;
@@ -63,6 +60,7 @@ void loop() {
         } else {
             Serial.print("msg(f1)");
         }
+        lastPing = millis(); // We don't need to ping if we are already sending messages
     }
 
     if (millis() - lastPing > 1000) {
