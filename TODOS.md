@@ -1,0 +1,7 @@
+ - more switches
+ - layout visualization
+ - resetting
+ - I2C modular communication
+ - Versioning system (keeping track of software versions on each module to prevent errors between different versions)
+ - Better error handling (especially in the serial library)
+ - Better audio system (sampling, buffering, loading samples from file, etc)
