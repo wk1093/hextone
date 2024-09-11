@@ -44,7 +44,7 @@ void loop() {
     bool sw1s = digitalRead(SWITCH_1);
     bool sw1db;
 
-    if ((sw1s != sw1_state) && (millis() - lastsw1 > 100)) {
+    if ((sw1s != sw1_state) && (millis() - lastsw1 > 25)) {
         sw1db = sw1s;
         lastsw1 = millis();
     } else {

@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -238,8 +239,22 @@ int main() {
         }
 
         // button display
-        // little box that change color when button is pressed
-        ImGui::Checkbox("1", &button1state);
+        // hexagon that change color when button is pressed
+
+        // imgui render a hexagon
+
+        ImGui::Begin("Hexagonal", nullptr);
+        ImVec2 center = ImGui::GetWindowPos()+ImVec2(ImGui::GetWindowSize().x/2, ImGui::GetWindowSize().y/2);
+
+        ImColor color = ImColor(0, 0, 0, 0);
+        if (button1state) {
+            color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+        } else {
+            color = ImGui::GetStyle().Colors[ImGuiCol_Button];
+        }
+        ImGui::GetWindowDrawList()->AddCircleFilled(center, 10, color, 6);
+
+        ImGui::End();
 
 
 

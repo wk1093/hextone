@@ -1,3 +1,3 @@
 @echo off
 cd arduino
-start interface.bat
+interface.bat
