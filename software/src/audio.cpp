@@ -11,7 +11,10 @@ void terminateAudio() {
 int AudioPlayer::callback(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData) {
     auto* data = (AudioPlayerData*)userData;
     if (data->position >= data->buffer.size()) {
-        return paComplete;
+        for (unsigned long i = 0; i < framesPerBuffer; i++) {
+            ((float*)outputBuffer)[i] = 0.0f;
+        }
+        return paContinue; // keep playing silence
     }
     float* out = (float*)outputBuffer;
     for (unsigned long i = 0; i < framesPerBuffer; i++) {
@@ -25,7 +28,17 @@ int AudioPlayer::callback(const void* inputBuffer, void* outputBuffer, unsigned 
 }
 
 AudioPlayer::AudioPlayer() {
-    PaError e = Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, SAMPLE_RATE, paFramesPerBufferUnspecified, callback, &data);
+    // PaError e = Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, SAMPLE_RATE, paFramesPerBufferUnspecified, callback, &data);
+    // manual stream
+    int defaultDevice = Pa_GetDefaultOutputDevice();
+    PaStreamParameters outputParameters;
+    outputParameters.device = defaultDevice;
+    outputParameters.channelCount = 1;
+    outputParameters.sampleFormat = paFloat32;
+    outputParameters.suggestedLatency = 0.1;
+    outputParameters.hostApiSpecificStreamInfo = nullptr;
+
+    PaError e = Pa_OpenStream(&stream, nullptr, &outputParameters, SAMPLE_RATE, paFramesPerBufferUnspecified, paNoFlag, callback, &data);
     if (e != paNoError) {
         std::cerr << "Error: PortAudio failed to open stream" << std::endl;
         return;
@@ -46,10 +59,10 @@ AudioPlayer::~AudioPlayer() {
 
 void AudioPlayer::play() {
     // prevent errors
-    if (data.buffer.empty()) {
-        std::cerr << "Error: AudioPlayer::play called with empty buffer" << std::endl;
-        return;
-    }
+    // if (data.buffer.empty()) {
+    //     std::cerr << "Error: AudioPlayer::play called with empty buffer" << std::endl;
+    //     return;
+    // }
     // make sure there is no corruption in the buffer
     if (data.position >= data.buffer.size()) {
         data.position = 0;

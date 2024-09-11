@@ -36,11 +36,28 @@ void setup() {
 }
 
 long long lastPing = 0;
+long long lastsw1 = 0;
 
 void loop() {
+
+    // debounce
+    bool sw1s = digitalRead(SWITCH_1);
+    bool sw1db;
+
+    if ((sw1s != sw1_state) && (millis() - lastsw1 > 100)) {
+        sw1db = sw1s;
+        lastsw1 = millis();
+    } else {
+        sw1db = sw1_state;
+    }
+        
+        
+            
+
+
     bool sws;
-    if ((sws = !digitalRead(SWITCH_1)) != sw1_state) {
-        sw1_state = sws;
+    if ((sws = !sw1db) != !sw1_state) {
+        sw1_state = !sws;
         if (sws) {
             Serial.print("msg(o1)");
         } else {

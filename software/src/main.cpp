@@ -83,27 +83,8 @@ void queueThreadFunction() {
                 // o: note on
                 // f: note off
                 // s: shutdown
+                // p: ping
                 // other: error
-                // if (str[str.find("msg")+4] == 'o') {
-                //     std::cout << "Received note on" << std::endl;
-                //     item.type = QueueItem::Type::NoteOn;
-                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                // } else if (str[str.find("msg")+4] == 'f') {
-                //     std::cout << "Received note off" << std::endl;
-                //     item.type = QueueItem::Type::NoteOff;
-                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                // } else if (str[str.find("msg")+4] == 's') {
-                //     item.type = QueueItem::Type::Shutdown;
-                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                // } else if (str[str.find("msg")+4] == 'p') {
-                //     item.type = QueueItem::Type::Ping;
-                //     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.end()-1);
-                // }
-                //  else {
-                //     std::cerr << "Error: Unknown message type " << str[str.find("msg")+4] << std::endl;
-                // }
-                // this needs to be a bit more complicated, because mutliple messages can be sent in one go
-                // like this: msg(o1)msg(f1)msg(o2)msg(f2)
                 while (str.find("msg(") != std::string::npos) {
                     if (str[str.find("msg")+4] == 'o') {
                         item.type = QueueItem::Type::NoteOn;
@@ -141,6 +122,7 @@ int main() {
     initAudio();
 
     Synth* synth = new SineSynth();
+    synth->amplitude = 0.25f;
     // TODO: search for port automatically
     SerialPort serialPort("COM6");
     if (!serialPort.connected) {
@@ -213,6 +195,11 @@ int main() {
     bool button1state = false;
 
 
+    AudioPlayer* mainPlayer = new AudioPlayer();
+    mainPlayer->play();
+
+    AudioBuffer presynth = synth->generateSeconds(0.25f);
+
     while (running) {
         if (globalState.exit) {
             running = false;
@@ -222,6 +209,7 @@ int main() {
             QueueItem item = globalState.queue.pop();
             if (item.type == QueueItem::Type::NoteOn) {
                 button1state = true;
+                mainPlayer->mixNow(presynth);
                 
             } else if (item.type == QueueItem::Type::NoteOff) {
                 button1state = false;
