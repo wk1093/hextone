@@ -122,8 +122,9 @@ void queueThreadFunction() {
 int main() {
     initAudio();
 
-    Synth* synth = new SineSynth();
+    EnvelopeSynth* synth = new EnvelopeSynth();
     synth->amplitude = 0.25f;
+    synth->waveType = EnvelopeSynth::WaveType::Square;
     // TODO: search for port automatically
     SerialPort serialPort("COM6");
     if (!serialPort.connected) {
@@ -196,38 +197,57 @@ int main() {
     std::vector<bool> buttonStates(8, false);
 
 
-    AudioPlayer* mainPlayer = new AudioPlayer();
-    mainPlayer->play();
+    // float notelength = 1.0f;
 
-    // A
-    synth->frequency = 440;
-    AudioBuffer presynth0 = synth->generateSeconds(0.25f);
-    // 
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth1 = synth->generateSeconds(0.25f);
-    // D
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth2 = synth->generateSeconds(0.25f);
-    // G
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth3 = synth->generateSeconds(0.25f);
-    // B
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth4 = synth->generateSeconds(0.25f);
-    // E
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth5 = synth->generateSeconds(0.25f);
-    // A
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth6 = synth->generateSeconds(0.25f);
-    // D
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth7 = synth->generateSeconds(0.25f);
-    // G
-    synth->frequency = synth->frequency*1.05946456;
-    AudioBuffer presynth8 = synth->generateSeconds(0.25f);
 
-    std::vector<AudioBuffer*> presynths = {&presynth0, &presynth1, &presynth2, &presynth3, &presynth4, &presynth5, &presynth6, &presynth7, &presynth8};
+    // synth->frequency = 440;
+    // AudioBuffer presynth0 = synth->generateSeconds(notelength);
+    // AudioPlayer* player0 = new AudioPlayer(presynth0);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth1 = synth->generateSeconds(notelength);
+    // AudioPlayer* player1 = new AudioPlayer(presynth1);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth2 = synth->generateSeconds(notelength);
+    // AudioPlayer* player2 = new AudioPlayer(presynth2);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth3 = synth->generateSeconds(notelength);
+    // AudioPlayer* player3 = new AudioPlayer(presynth3);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth4 = synth->generateSeconds(notelength);
+    // AudioPlayer* player4 = new AudioPlayer(presynth4);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth5 = synth->generateSeconds(notelength);
+    // AudioPlayer* player5 = new AudioPlayer(presynth5);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth6 = synth->generateSeconds(notelength);
+    // AudioPlayer* player6 = new AudioPlayer(presynth6);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth7 = synth->generateSeconds(notelength);
+    // AudioPlayer* player7 = new AudioPlayer(presynth7);
+
+    // synth->frequency = synth->frequency*1.05946456;
+    // AudioBuffer presynth8 = synth->generateSeconds(notelength);
+    // AudioPlayer* player8 = new AudioPlayer(presynth8);
+
+    // std::vector<AudioPlayer*> players = {player0, player1, player2, player3, player4, player5, player6, player7, player8};
+
+    AudioSynthesizer* synth1 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth2 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth3 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth4 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth5 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth6 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth7 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    AudioSynthesizer* synth8 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    std::vector<AudioSynthesizer*> synths = {synth1, synth2, synth3, synth4, synth5, synth6, synth7, synth8};
+    std::vector<float> frequencies = {440, 460, 480, 500, 520, 540, 560, 580};
 
 
     while (running) {
@@ -240,12 +260,12 @@ int main() {
             if (item.type == QueueItem::Type::NoteOn) {
                 int button = item.data[0]-'0';
                 buttonStates[button] = true;
-                mainPlayer->mixNow(*presynths[button]);
+                synths[button-1]->start(frequencies[button-1], 0.5f);
             } else if (item.type == QueueItem::Type::NoteOff) {
                 int button = item.data[0]-'0';
                 buttonStates[button] = false;
+                synths[button-1]->stop();
             }
-
         }
 
         // prerender
@@ -291,11 +311,10 @@ int main() {
                 ImColor color = ImColor(0, 0, 0, 0);
                 if (buttonStates[(1-j)*4+i+1]) {
                     color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
-                    std::cout << "Button " << i*2+j+1 << " pressed" << std::endl;
                 } else {
                     color = ImGui::GetStyle().Colors[ImGuiCol_Button];
                 }
-                ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(center.x+j*20, center.y+i*20), 10, color, 6);
+                ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(center.x+j*30, center.y+i*35-j*15), 20, color, 6);
             }
         }
 

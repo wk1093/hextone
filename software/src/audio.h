@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <cmath>
 
 #define SAMPLE_RATE 44100
 
@@ -129,4 +130,45 @@ struct AudioPlayer {
         return data.position;
     }
 
+};
+
+typedef AudioBuffer (*SynthFunction)(size_t sampleCount, float frequency, float amplitude, size_t position, bool isDown, void* userData);
+
+// alternative to AudioPlayer
+struct AudioSynthesizer {
+    // synthesizes data on the fly whenever it is requested, this allows us to stop a note, and have a fade out, and other effects too
+    struct AudioSynthesizerData {
+        SynthFunction function;
+        void* userData;
+        size_t position = 0;
+        float frequency = 440;
+        float amplitude = 0.5;
+        bool isDown = false; // is the key currently pressed
+
+    } data;
+
+    PaStream* stream{};
+    static int callback(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData);
+    AudioSynthesizer(SynthFunction function, void* userData);
+    ~AudioSynthesizer();
+    void start(float frequency, float amplitude);
+    void stop();
+};
+
+struct SineSynthf {
+    static AudioBuffer synth(size_t sampleCount, float frequency, float amplitude, size_t position, bool isDown, void* userData) {
+        AudioBuffer buffer(sampleCount);
+        printf("freq: %f\n", frequency);
+        for (size_t i = 0; i < sampleCount; i++) {
+            float t = static_cast<float>(position+i) / SAMPLE_RATE;
+            float value = amplitude * std::sin(2.0f * (float)M_PI * frequency * t);
+            buffer[i] = value;
+            if (isDown) {
+                buffer[i] = 0.0f;
+                break;
+                // TODO: fade out
+            }
+        }
+        return buffer;
+    }
 };

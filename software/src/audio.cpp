@@ -162,3 +162,91 @@ void AudioPlayer::mixNow(AudioBuffer buffer) {
     }
 }
 
+
+int AudioSynthesizer::callback(const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData) {
+    auto* data = (AudioSynthesizerData*)userData;
+    AudioBuffer buffer = data->function(framesPerBuffer, data->frequency, data->amplitude, data->position, data->isDown, data->userData);
+    bool isZero = true;
+    for (size_t i = 0; i < buffer.size(); i++) {
+        ((float*)outputBuffer)[i] = buffer[i];
+        if (buffer[i] != 0.0f) {
+            isZero = false;
+        }
+        data->position++;
+    }
+    if (isZero && !data->isDown) {
+        return paComplete;
+    }
+    return paContinue;
+}
+
+AudioSynthesizer::AudioSynthesizer(SynthFunction function, void* userData) : data({function, userData}) {
+    int defaultDevice = Pa_GetDefaultOutputDevice();
+    PaStreamParameters outputParameters;
+    outputParameters.device = defaultDevice;
+    outputParameters.channelCount = 1;
+    outputParameters.sampleFormat = paFloat32;
+    outputParameters.suggestedLatency = 0.05; // NOTE: lower number is less latency, but lower quality and more CPU usage
+    outputParameters.hostApiSpecificStreamInfo = nullptr;
+    PaError e = Pa_OpenStream(&stream, nullptr, &outputParameters, SAMPLE_RATE, paFramesPerBufferUnspecified, paNoFlag, callback, &data);
+    if (e != paNoError) {
+        std::cerr << "Error: PortAudio failed to open stream" << std::endl;
+        return;
+    }
+}
+
+AudioSynthesizer::~AudioSynthesizer() {
+    PaError e = Pa_CloseStream(stream);
+    if (e != paNoError) {
+        std::cerr << "Error: PortAudio failed to close stream" << std::endl;
+        std::cerr << Pa_GetErrorText(e) << std::endl;
+        return;
+    }
+    data.position = 0;
+    data.isDown = false;
+}
+
+void AudioSynthesizer::start(float frequency, float amplitude) {
+    data.frequency = frequency;
+    data.amplitude = amplitude;
+    data.position = 0;
+    data.isDown = true;
+    // if already playing, cancel that, and restart
+    if (data.isDown) {
+        stop();
+    }
+    if (Pa_IsStreamActive(stream) == 1) {
+        PaError e = Pa_StopStream(stream);
+        if (e != paNoError) {
+            std::cerr << "Error: PortAudio failed to stop stream" << std::endl;
+            std::cerr << Pa_GetErrorText(e) << std::endl;
+            return;
+        }
+    }
+
+    PaError e = Pa_StartStream(stream);
+    if (e != paNoError) {
+        std::cerr << "Error: PortAudio failed to start stream" << std::endl;
+        std::cerr << Pa_GetErrorText(e) << std::endl;
+        return;
+    }
+}
+
+void AudioSynthesizer::stop() {
+    data.isDown = false;
+    if (Pa_IsStreamActive(stream) == 0) {
+        return;
+    }
+    PaError e = Pa_StopStream(stream);
+    if (e != paNoError) {
+        std::cerr << "Error: PortAudio failed to stop stream" << std::endl;
+        std::cerr << Pa_GetErrorText(e) << std::endl;
+        return;
+    }
+}
+
+
+
+
+
+
