@@ -1,11 +1,32 @@
 #include <string.h>
 
-#define SWITCH_1 12
+const int SWITCH_1 = 11;
+const int SWITCH_2 = 10;
+const int SWITCH_3 = 9;
+const int SWITCH_4 = 8;
+const int SWITCH_5 = 7;
+const int SWITCH_6 = 6;
+const int SWITCH_7 = 5;
+const int SWITCH_8 = 4;
 bool sw1_state = false;
+bool sw2_state = false;
+bool sw3_state = false;
+bool sw4_state = false;
+bool sw5_state = false;
+bool sw6_state = false;
+bool sw7_state = false;
+bool sw8_state = false;
 
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(SWITCH_1, INPUT_PULLUP);
+    pinMode(SWITCH_2, INPUT_PULLUP);
+    pinMode(SWITCH_3, INPUT_PULLUP);
+    pinMode(SWITCH_4, INPUT_PULLUP);
+    pinMode(SWITCH_5, INPUT_PULLUP);
+    pinMode(SWITCH_6, INPUT_PULLUP);
+    pinMode(SWITCH_7, INPUT_PULLUP);
+    pinMode(SWITCH_8, INPUT_PULLUP);
     Serial.begin(115200);
     // wait for serial message that exactly equals "ready"
     delay(2000);
@@ -37,31 +58,48 @@ void setup() {
 
 long long lastPing = 0;
 long long lastsw1 = 0;
+long long lastsw2 = 0;
+long long lastsw3 = 0;
+long long lastsw4 = 0;
+long long lastsw5 = 0;
+long long lastsw6 = 0;
+long long lastsw7 = 0;
+long long lastsw8 = 0;
+
 
 void loop() {
-
-    // debounce
-    bool sw1s = digitalRead(SWITCH_1);
-    bool sw1db;
-
-    if ((sw1s != sw1_state) && (millis() - lastsw1 > 25)) {
-        sw1db = sw1s;
-        lastsw1 = millis();
-    } else {
-        sw1db = sw1_state;
-    }    
-
+#define SWTICHCHECK(num) \
+    bool sw##num##s = digitalRead(SWITCH_##num); \
+    bool sw##num##db; \
+    if ((sw##num##s != sw##num##_state) && (millis() - lastsw##num > 25)) { \
+        sw##num##db = sw##num##s; \
+        lastsw##num = millis(); \
+    } else { \
+        sw##num##db = sw##num##_state; \
+    } \
+    if ((sws = !sw##num##db) != !sw##num##_state) { \
+        sw##num##_state = !sws; \
+        if (sws) { \
+            Serial.print("msg(o" #num ")"); \
+        } else { \
+            Serial.print("msg(f" #num ")"); \
+        } \
+        lastPing = millis(); \
+    }
 
     bool sws;
-    if ((sws = !sw1db) != !sw1_state) {
-        sw1_state = !sws;
-        if (sws) {
-            Serial.print("msg(o1)");
-        } else {
-            Serial.print("msg(f1)");
-        }
-        lastPing = millis(); // We don't need to ping if we are already sending messages
-    }
+
+    SWTICHCHECK(1);
+    SWTICHCHECK(2);
+    SWTICHCHECK(3);
+    SWTICHCHECK(4);
+    SWTICHCHECK(5);
+    SWTICHCHECK(6);
+    SWTICHCHECK(7);
+    SWTICHCHECK(8);
+
+
+
 
     if (millis() - lastPing > 1000) {
         Serial.print("msg(ping)");
@@ -69,14 +107,15 @@ void loop() {
     }
 
 
-    // if (Serial.available() > 0) {
-    //     char buf[256];
-    //     int read = Serial.readBytes(buf, 255);
-    //     buf[read] = '\0';
-    //     if (strncmp(buf, "shutdown", 8) == 0) {
-    //         // TODO: reset without fucking up the serial communitcation
-    //     }
-    // }
+    if (Serial.available() > 0) {
+        char buf[256];
+        int read = Serial.readBytes(buf, 255);
+        buf[read] = '\0';
+        if (strncmp(buf, "shutdown", 8) == 0) {
+            // TODO: reset without fucking up the serial communitcation
+            setup();
+        }
+    }
 
             
 

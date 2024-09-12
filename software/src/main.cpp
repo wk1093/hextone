@@ -193,13 +193,42 @@ int main() {
 
     bool running = true;
 
-    bool button1state = false;
+    std::vector<bool> buttonStates(8, false);
 
 
     AudioPlayer* mainPlayer = new AudioPlayer();
     mainPlayer->play();
 
-    AudioBuffer presynth = synth->generateSeconds(0.25f);
+    // A
+    synth->frequency = 440;
+    AudioBuffer presynth0 = synth->generateSeconds(0.25f);
+    // 
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth1 = synth->generateSeconds(0.25f);
+    // D
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth2 = synth->generateSeconds(0.25f);
+    // G
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth3 = synth->generateSeconds(0.25f);
+    // B
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth4 = synth->generateSeconds(0.25f);
+    // E
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth5 = synth->generateSeconds(0.25f);
+    // A
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth6 = synth->generateSeconds(0.25f);
+    // D
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth7 = synth->generateSeconds(0.25f);
+    // G
+    synth->frequency = synth->frequency*1.05946456;
+    AudioBuffer presynth8 = synth->generateSeconds(0.25f);
+
+    std::vector<AudioBuffer*> presynths = {&presynth0, &presynth1, &presynth2, &presynth3, &presynth4, &presynth5, &presynth6, &presynth7, &presynth8};
+
 
     while (running) {
         if (globalState.exit) {
@@ -209,11 +238,12 @@ int main() {
         if (!globalState.queue.empty()) {
             QueueItem item = globalState.queue.pop();
             if (item.type == QueueItem::Type::NoteOn) {
-                button1state = true;
-                mainPlayer->mixNow(presynth);
-                
+                int button = item.data[0]-'0';
+                buttonStates[button] = true;
+                mainPlayer->mixNow(*presynths[button]);
             } else if (item.type == QueueItem::Type::NoteOff) {
-                button1state = false;
+                int button = item.data[0]-'0';
+                buttonStates[button] = false;
             }
 
         }
@@ -246,13 +276,28 @@ int main() {
         ImGui::Begin("Hexagonal", nullptr);
         ImVec2 center = ImGui::GetWindowPos()+ImVec2(ImGui::GetWindowSize().x/2, ImGui::GetWindowSize().y/2);
 
-        ImColor color = ImColor(0, 0, 0, 0);
-        if (button1state) {
-            color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
-        } else {
-            color = ImGui::GetStyle().Colors[ImGuiCol_Button];
+        // ImColor color = ImColor(0, 0, 0, 0);
+        // if (buttonStates[0]) {
+        //     std::cout << "Button 1 pressed" << std::endl;
+        //     color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+        // } else {
+        //     color = ImGui::GetStyle().Colors[ImGuiCol_Button];
+        // }
+        // ImGui::GetWindowDrawList()->AddCircleFilled(center, 10, color, 6);
+
+        // make in a hexagonal pattern, 2 x 4 buttons
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 2; j++) {
+                ImColor color = ImColor(0, 0, 0, 0);
+                if (buttonStates[(1-j)*4+i+1]) {
+                    color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+                    std::cout << "Button " << i*2+j+1 << " pressed" << std::endl;
+                } else {
+                    color = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                }
+                ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(center.x+j*20, center.y+i*20), 10, color, 6);
+            }
         }
-        ImGui::GetWindowDrawList()->AddCircleFilled(center, 10, color, 6);
 
         ImGui::End();
 

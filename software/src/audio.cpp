@@ -35,7 +35,7 @@ AudioPlayer::AudioPlayer() {
     outputParameters.device = defaultDevice;
     outputParameters.channelCount = 1;
     outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = 0.1; // NOTE: lower number is less latency, but lower quality and more CPU usage
+    outputParameters.suggestedLatency = 0.05; // NOTE: lower number is less latency, but lower quality and more CPU usage
     outputParameters.hostApiSpecificStreamInfo = nullptr;
 
     PaError e = Pa_OpenStream(&stream, nullptr, &outputParameters, SAMPLE_RATE, paFramesPerBufferUnspecified, paNoFlag, callback, &data);
