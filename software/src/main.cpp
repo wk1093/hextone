@@ -14,6 +14,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include "serial.h"
+#include "audio.h"
 #include "synth.h"
 
 
@@ -121,7 +122,7 @@ void queueThreadFunction() {
 int main() {
     initAudio();
 
-    EnvelopeSynth* synth = new EnvelopeSynth();
+    EnvelopeSynth* synth = new EnvelopeSynth(); // TODO: use synther instead of old synth
     synth->amplitude = 0.25f;
     synth->waveType = EnvelopeSynth::WaveType::Square;
     // TODO: search for port automatically

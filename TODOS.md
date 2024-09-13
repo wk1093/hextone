@@ -1,7 +1,11 @@
- - more switches
  - layout visualization
- - resetting
  - I2C modular communication
  - Versioning system (keeping track of software versions on each module to prevent errors between different versions)
  - Better error handling (especially in the serial library)
  - Better audio system (sampling, buffering, loading samples from file, etc)
+ - better synths (more waveforms, more complex envelopes, etc)
+ - refactoring (seperate main function a bit, renaming the synth-related stuff, etc)
+ - better documentation and comments
+ - UI for customizing synths, and for changing the pitch of each note
+ - UI for applying a calculated layout to the notes (instead of manually setting the pitch of each note)
+ - Use new synth version for startup sound
