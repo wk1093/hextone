@@ -156,9 +156,8 @@ struct AudioSynthesizer {
 };
 
 struct SineSynthf {
-    static AudioBuffer synth(size_t sampleCount, float frequency, float amplitude, size_t position, bool isDown, void* userData) {
+    static inline AudioBuffer synth(size_t sampleCount, float frequency, float amplitude, size_t position, bool isDown, void* userData) {
         AudioBuffer buffer(sampleCount);
-        printf("freq: %f\n", frequency);
         for (size_t i = 0; i < sampleCount; i++) {
             float t = static_cast<float>(position+i) / SAMPLE_RATE;
             float value = amplitude * std::sin(2.0f * (float)M_PI * frequency * t);
@@ -166,9 +165,44 @@ struct SineSynthf {
             if (isDown) {
                 buffer[i] = 0.0f;
                 break;
-                // TODO: fade out
             }
         }
         return buffer;
+    }
+};
+
+
+struct SquareSynthf {
+    static inline AudioBuffer synth(size_t sampleCount, float frequency, float amplitude, size_t position, bool isDown, void* userData) {
+        AudioBuffer buffer(sampleCount);
+        for (size_t i = 0; i < sampleCount; i++) {
+            float t = static_cast<float>(i) / SAMPLE_RATE;
+            float value = amplitude * (std::sin(2.0f * (float)M_PI * frequency * t) > 0.0f ? 1.0f : -1.0f);
+            buffer[i] = value;
+            if (isDown) {
+                buffer[i] = 0.0f;
+                break;
+            }
+        }
+        return buffer;
+    }
+};
+
+template<typename T>
+struct AudioSynther {
+    AudioSynthesizer* synth;
+    T data;
+    AudioSynther(T data) : data(data) {
+        synth = new AudioSynthesizer(T::synth, &data);
+    }
+    ~AudioSynther() {
+        delete synth;
+        synth = nullptr;
+    }
+    void start(float frequency, float amplitude) {
+        synth->start(frequency, amplitude);
+    }
+    void stop() {
+        synth->stop();
     }
 };

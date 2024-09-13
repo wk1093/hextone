@@ -86,7 +86,7 @@ void queueThreadFunction() {
                 // s: shutdown
                 // p: ping
                 // other: error
-                while (str.find("msg(") != std::string::npos) {
+                while (str.find("msg") != std::string::npos) {
                     if (str[str.find("msg")+4] == 'o') {
                         item.type = QueueItem::Type::NoteOn;
                     } else if (str[str.find("msg")+4] == 'f') {
@@ -100,10 +100,9 @@ void queueThreadFunction() {
                     }
                     item.data = std::vector<uint8_t>(str.begin() + str.find("msg") + 5, str.begin()+str.find(')'));
                     str = str.substr(str.find(')')+1);
+
+                    globalState.queue.push(item);
                 }
-
-
-                globalState.queue.push(item);
             } else {
                 std::cout << "WARNING: Mangled message" << std::endl;
             }
@@ -249,13 +248,15 @@ int main() {
     std::vector<AudioSynthesizer*> synths = {synth1, synth2, synth3, synth4, synth5, synth6, synth7, synth8};
     std::vector<float> frequencies = {440, 460, 480, 500, 520, 540, 560, 580};
 
+    // TODO: use AudioSynther instead of AudioSynthesizer
+
 
     while (running) {
         if (globalState.exit) {
             running = false;
         }
 
-        if (!globalState.queue.empty()) {
+        while (!globalState.queue.empty()) {
             QueueItem item = globalState.queue.pop();
             if (item.type == QueueItem::Type::NoteOn) {
                 int button = item.data[0]-'0';
