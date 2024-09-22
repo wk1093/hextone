@@ -238,15 +238,25 @@ int main() {
 
     // std::vector<AudioPlayer*> players = {player0, player1, player2, player3, player4, player5, player6, player7, player8};
 
-    AudioSynthesizer* synth1 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth2 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth3 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth4 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth5 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth6 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth7 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    AudioSynthesizer* synth8 = new AudioSynthesizer(SineSynthf::synth, nullptr);
-    std::vector<AudioSynthesizer*> synths = {synth1, synth2, synth3, synth4, synth5, synth6, synth7, synth8};
+    // AudioSynthesizer* synth1 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth2 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth3 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth4 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth5 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth6 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth7 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // AudioSynthesizer* synth8 = new AudioSynthesizer(SineSynthf::synth, nullptr);
+    // std::vector<AudioSynthesizer*> synths = {synth1, synth2, synth3, synth4, synth5, synth6, synth7, synth8};
+    // std::vector<float> frequencies = {440, 460, 480, 500, 520, 540, 560, 580};
+    AudioSynther<SineSynthf>* synth1 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth2 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth3 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth4 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth5 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth6 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth7 = new AudioSynther<SineSynthf>();
+    AudioSynther<SineSynthf>* synth8 = new AudioSynther<SineSynthf>();
+    std::vector<AudioSynther<SineSynthf>*> synths = {synth1, synth2, synth3, synth4, synth5, synth6, synth7, synth8};
     std::vector<float> frequencies = {440, 460, 480, 500, 520, 540, 560, 580};
 
     // TODO: use AudioSynther instead of AudioSynthesizer
@@ -298,29 +308,56 @@ int main() {
         ImGui::Begin("Hexagonal", nullptr);
         ImVec2 center = ImGui::GetWindowPos()+ImVec2(ImGui::GetWindowSize().x/2, ImGui::GetWindowSize().y/2);
 
-        // ImColor color = ImColor(0, 0, 0, 0);
-        // if (buttonStates[0]) {
-        //     std::cout << "Button 1 pressed" << std::endl;
-        //     color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
-        // } else {
-        //     color = ImGui::GetStyle().Colors[ImGuiCol_Button];
-        // }
-        // ImGui::GetWindowDrawList()->AddCircleFilled(center, 10, color, 6);
+
+        static int popup = 0; // 0 means none, 1 means popup for button 1, 2 means popup for button 2, etc
 
         // make in a hexagonal pattern, 2 x 4 buttons
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 2; j++) {
                 ImColor color = ImColor(0, 0, 0, 0);
+                float jxm = j*sin(M_PI/3.0f)*35;
+                float iym = i*35;
+                float jym = -j*0.5*35;
+                ImGui::SetCursorScreenPos(ImVec2(center.x+jxm-15, center.y+iym+jym-15));
+                if (ImGui::InvisibleButton(("##btn"+std::to_string((1-j)*4+i+1)).c_str(), ImVec2(30, 30))) {
+                    popup = (1-j)*4+i+1;
+                    std::cout << "Button " << popup << " pressed" << std::endl;
+                }
                 if (buttonStates[(1-j)*4+i+1]) {
                     color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
                 } else {
                     color = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                    if (ImGui::IsItemHovered()) {
+                        color = ImGui::GetStyle().Colors[ImGuiCol_ButtonHovered];
+                    }
                 }
-                ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(center.x+j*30, center.y+i*35-j*15), 20, color, 6);
+                // insteaf of unsing 30, 35, and 15, we need to actually calculate it using the angle of a hexagon
+                ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(center.x+jxm, center.y+iym+jym), 20, color, 6);
+                // make the circle a clickable button
+
             }
         }
 
         ImGui::End();
+
+
+        bool popupOpen = false;
+
+        if (popup != 0) {
+            popupOpen = true;
+            ImGui::Begin("Modify Note", &popupOpen, ImGuiWindowFlags_AlwaysAutoResize);
+            // allows us to change the frequency of the note we clicked on
+            ImGui::SliderFloat("Frequency", &frequencies[popup-1], 0.0f, 2000.0f, "%.3f Hz", ImGuiSliderFlags_NoRoundToFormat);
+            ImGui::End();
+            if (ImGui::IsWindowCollapsed()) {
+                popup = 0;
+            }
+            if (!popupOpen) {
+                popup = 0;
+            }
+        }
+
+
 
 
 

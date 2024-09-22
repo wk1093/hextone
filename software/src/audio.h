@@ -192,9 +192,14 @@ template<typename T>
 struct AudioSynther {
     AudioSynthesizer* synth;
     T data;
-    AudioSynther(T data) : data(data) {
+    AudioSynther(T dat) : data(dat) {
         synth = new AudioSynthesizer(T::synth, &data);
     }
+    AudioSynther() {
+        data = T();
+        synth = new AudioSynthesizer(T::synth, &data);
+    }
+
     ~AudioSynther() {
         delete synth;
         synth = nullptr;
